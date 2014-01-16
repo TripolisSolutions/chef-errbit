@@ -1,3 +1,8 @@
 <%= @params[:environment] %>:
-  host: localhost
-  database: <%= @params[:database] %>
+  sessions:
+    default:
+      database: <%= @params[:database] %>
+      hosts:
+        - localhost:27017
+  options:
+    identity_map_enabled: true
