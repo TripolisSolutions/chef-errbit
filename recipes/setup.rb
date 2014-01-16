@@ -51,6 +51,9 @@ file "/etc/profile.d/errbit_env.sh" do
   content "export SECRET_TOKEN=#{secret_token}\nexport RAILS_ENV=production\nexport RACK_ENV=production\n"
 end
 
+execute "/etc/profile.d/errbit_env.sh" do
+  user node['errbit']['user']
+end
 # execute "set RAILS_ENV var" do
 #   command "echo 'export RAILS_ENV=production' >> ~/.bash_profile"
 #   not_if "grep RAILS_ENV ~/.bash_profile"
@@ -163,7 +166,7 @@ deploy_revision node['errbit']['deploy_to'] do
     "config/config.yml" => "config/config.yml",
     "config/mongoid.yml" => "config/mongoid.yml"
   )
-  environment 'RAILS_ENV' => node['errbit']['environment'], 'SECRET_TOKEN' => node['errbit']['secret_token']
+  environment 'RAILS_ENV' => node['errbit']['environment'], 'SECRET_TOKEN' => "#{secret_token}"
   shallow_clone true
   action :deploy #:deploy or :rollback or :force_deploy
 
@@ -182,12 +185,27 @@ deploy_revision node['errbit']['deploy_to'] do
   scm_provider Chef::Provider::Git
 end
 
+file "/home/deploy/errbit/shared/__secret_token.rb" do
+  user node['errbit']['user']
+  content "Errbit::Application.config.secret_token = \"#{secret_token}\"\n"
+  action :create_if_missing
+end
+
+link "/home/deploy/errbit/current/config/initializers/__secret_token.rb" do
+  action :delete
+  only_if "test -L /home/deploy/errbit/current/config/initializers/__secret_token.rb"
+end
+execute "force to create the secret_token" do
+  user node['errbit']['user']
+  command "ln -s /home/deploy/errbit/shared/__secret_token.rb /home/deploy/errbit/current/config/initializers/__secret_token.rb"
+end
+
 template "#{node['nginx']['dir']}/sites-available/#{node['errbit']['name']}" do
   source "nginx.conf.erb"
   owner "root"
   group "root"
   mode 00644
-  # variables( server_names: ['example.com', 'www.example.com'] )
+  variables( server_names: [node['errbit']['config']['host']] )
 end
 
 nginx_site node['errbit']['name'] do

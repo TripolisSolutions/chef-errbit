@@ -37,7 +37,7 @@ end
 
 def start_unicorn
   puts "Gemfile detected - running Unicorn with bundle exec"
-  run_and_ignore_exitcode_and_print_command "cd #{ROOT_PATH}/current && bundle exec unicorn -E production -c #{ROOT_PATH}/shared/config/unicorn.conf -D"
+  run_and_ignore_exitcode_and_print_command "cd #{ROOT_PATH}/current && bundle exec unicorn_rails -E production -c #{ROOT_PATH}/shared/config/unicorn.conf -D"
 end
 
 def stop_unicorn
